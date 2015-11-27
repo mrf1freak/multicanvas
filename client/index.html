@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Agario Clone</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <style type="text/css">
+        * {
+            box-sizing: border-box;
+        }
+        
+        canvas {
+            background: grey;
+        }
+        
+        #name {
+            position: absolute;
+            top: 0;
+            width: 1366px;
+            height: 720px;
+            padding-top: 170px;
+            text-align: center;
+        }
+        
+        #name input[type="text"] {
+            padding: 0;
+            position: static;
+            height: 50px !important;
+            width: 350px !important;
+        }
+        
+        #name input[type="submit"] {
+            margin-top: 25px;
+            width: 100px;
+            height: 40px !important;
+        }
+    </style>
+    <script>
+        var socket = io();
+
+        $(document).ready(function() {
+
+
+            var canvas = $("#canvas")[0].getContext('2d');
+
+            var circles = [];
+
+
+            $('form').submit(function() {
+                socket.emit('name', $('#name').val());
+                console.log('done');
+                $('#name').fadeOut(500);
+                return false;
+            });
+
+
+
+            socket.on('updateData', function(data) {
+                circles = data;
+                console.log(circles);
+            });
+
+
+            socket.on('check', function(data){
+                console.log(data);
+            });
+            $(document).keydown(function(key){
+                socket.emit('keypress', key.which);
+                console.log(key.which);
+            });
+            
+
+            //start animation
+            function animStart() {
+                for (var i = 0; i < circles.length; i++) {
+                    canvas.clearRect(0,0,1000,1000);
+                    canvas.beginPath();
+                    canvas.arc(circles[i].x, circles[i].y, circles[i].r, 0, 2 * Math.PI);
+                    canvas.stroke();
+                    
+                }
+                
+
+                window.requestAnimationFrame(animStart);
+            }
+            animStart();
+        });
+    </script>
+</head>
+
+<body>
+    <canvas id="canvas" width="1366" height="720"></canvas>
+    <div id="name">
+        <form action="#">
+            <input type="text" id="name" name="" />
+            <input type="submit" value="Submit" />
+        </form>
+    </div>
+</body>
+
+</html>

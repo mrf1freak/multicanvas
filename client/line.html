@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <link href='https://fonts.googleapis.com/css?family=Acme|Comfortaa|Lobster
+' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="stylesheet.css">
+</head>
+
+<body>
+    <canvas id="canvas" width="1280" height="720"></canvas>
+    <div id="name">
+        <input type="text" name="" placeholder="Your nickname..." />
+        <br/>
+        <input type="button" name="" value="Lets Go!" />
+    </div>
+    <div id="tips">
+        <p class="vcenter">Press C to clear. Press F for ping.</p>
+    </div>
+    <div id="bottomContainer">
+        <div id="players" class="bottomDivs" style="border-right: 1px solid darkgrey">
+            <div id="playerHeader">
+                <h2>Players here:</h2>
+            </div>
+            <p id="alone">Nobody Here</p>
+        </div>
+        <div id="strokeSettings" class="bottomDivs">
+            <canvas width="250" height="250" id="colorPicker"></canvas>
+            <div id="pickerDot"></div>
+            <br/>
+            <div id="strokeSizeSettings">
+                <div id="strokeSizeContainer">
+                    <div id="strokeSize"></div>
+                </div>
+                <br/>
+                <input type="range" min="1" max="50" step="1" value="5" id="range" name="" />
+            </div>
+        </div>
+    </div>
+    <div id="ping"></div>
+    <div id="preloader">
+        <div id="circle" class="vcenter">
+            <div class="dot vcenter"></div>
+            <div class="dot vcenter"></div>
+            <div class="dot vcenter"></div>
+            <div class="dot vcenter"></div>
+        </div>
+    </div>
+    <script>
+        var socket = io();
+        var canvas = document.getElementById('canvas').getContext('2d');
+        var drawing, x, y, prevX, prevY;
+        var iniTime, finalTime;
+        var id;
+        var imageObj = new Image();
+        var canvasData = new Image();
+        var colorPicker = document.getElementById('colorPicker').getContext('2d');
+        var color = "rgb(0,0,0)";
+        var pickerX, pickerY, colorData;
+
+
+
+
+        function randomColor() {
+            var r, g, b;
+
+            r = Math.floor(Math.random() * 127.5 + 127.5);
+            g = Math.floor(Math.random() * 127.5 + 127.5);
+            b = Math.floor(Math.random() * 127.5 + 127.5);
+
+            return "rgb(" + r + ", " + g + ", " + b + ")";
+        }
+
+
+        socket.on('updateID', function(sentID) {
+            id = sentID;
+        });
+
+        socket.on('createCursor', function(sentID) {
+            if (!(sentID == id)) {
+                $('body').append(
+                    $('<div/>')
+                    .attr("id", id)
+                    .addClass("cursors")
+                    .html('<i class="fa fa-mouse-pointer"></i>')
+
+                );
+
+                console.log('created by create cursor');
+            }
+        });
+
+        socket.on('updateCursor', function(cursorPos) {
+            if ($("#" + cursorPos[2]).length == 0 && !(cursorPos[2] == id)) {
+                $('body').append(
+                    $('<div/>')
+                    .attr("id", cursorPos[2])
+                    .addClass("cursors")
+                    .html('<i class="fa fa-mouse-pointer"></i>')
+                    .css({
+                        color: randomColor()
+                    })
+                );
+                $('#players').append(
+                    $('<div/>')
+                    .attr("id", cursorPos[2] + "LIST")
+                    .addClass("players")
+                    .html(cursorPos[3])
+                    .css({
+                        "background-color": $("#" + cursorPos[2]).css('color')
+                    })
+
+                );
+                    $('#alone').hide();
+                
+            }
+            else {
+                $("#" + cursorPos[2]).css({
+                    transform: "translate(" + cursorPos[0] + "px, " + cursorPos[1] + "px)"
+
+                });
+            }
+        });
+
+        socket.on('deleteCursor', function(idDel) {
+            $("#" + idDel).remove();
+            $("#" + idDel + "LIST").remove();
+            
+            console.log($('.playes').length);
+            if ($('.playes').length == 0) {
+                $('#alone').show();
+            }
+        });
+
+        socket.on('canvasState', function(state) {
+            canvasData.src = state;
+            canvasData.onload = function() {
+                canvas.drawImage(canvasData, 0, 0);
+
+                setTimeout(function() {
+                    $('#preloader').css({
+                        transform: "rotateX(-120deg)"
+                    });
+                    $('body').css({
+                        height: 'auto',
+                        overflow: 'auto'
+                    });
+                }, 2000);
+            };
+        });
+
+        socket.on('receiveLine', function(data) {
+            canvas.beginPath();
+            canvas.moveTo(data[2], data[3]);
+            canvas.lineTo(data[0], data[1]);
+            canvas.strokeStyle = data[4];
+            canvas.lineWidth = data[5];
+            canvas.stroke();
+
+        });
+
+        socket.on('clear', function() {
+            canvas.clearRect(0, 0, 2000, 2000);
+        });
+
+        socket.on('pong', function() {
+            finalTime = Date.now();
+            $("#ping").html("Ping: " + (finalTime - iniTime) + "ms");
+            setTimeout(ass, 2000);
+        });
+
+        function ass() {
+            $("#ping").html("");
+        }
+
+        // canvas events
+
+        $("#canvas").mousedown(function() {
+            drawing = true;
+        });
+
+        $("#canvas").on('mouseup mouseleave', function() {
+            drawing = false;
+            socket.emit('saveCanvasState', document.getElementById('canvas').toDataURL());
+            console.log('canvas data sent');
+        });
+
+        $("#canvas").mousemove(function(e) {
+            e.preventDefault();
+
+            prevX = x;
+            prevY = y;
+
+            x = e.pageX - $(this).offset().left;
+            y = e.pageY;
+
+            socket.emit('mouse', [x, y]);
+
+            if (drawing) {
+                canvas.beginPath();
+                canvas.moveTo(prevX, prevY);
+                canvas.lineTo(x, y);
+                canvas.strokeStyle = color;
+                canvas.lineWidth = strokeSize;
+                canvas.lineJoin = 'round';
+                canvas.lineCap = 'round';
+                canvas.closePath();
+                canvas.stroke();
+
+
+                var sendData = [x, y, prevX, prevY, color, strokeSize];
+
+                socket.emit('line', sendData);
+            }
+        });
+
+
+
+        // keyboard shortcut
+
+        $(document).keydown(function(e) {
+            if (e.which == 70) {
+                iniTime = Date.now();
+                socket.emit('ping');
+            }
+            if (e.which == 67) {
+
+                socket.emit('clear');
+            }
+        });
+
+        // preloader
+
+
+        imageObj.src = "images/color-picker.png";
+        imageObj.onload = function() {
+            colorPicker.drawImage(imageObj, 0, 0);
+        };
+
+        $('#colorPicker').click(function(e) {
+            pickerX = e.pageX - $(this).offset().left;
+            pickerY = e.pageY - $(this).offset().top;
+
+            colorData = colorPicker.getImageData(pickerX, pickerY, 1, 1).data;
+
+
+            color = "rgb(" + colorData[0] + "," + colorData[1] + "," + colorData[2] + ")";
+            $('#strokeSize').css('background', color);
+            $('#pickerDot').css({
+                display: 'block',
+                left: e.pageX,
+                top: e.pageY
+            });
+        });
+
+        var strokeSize;
+        $('#range').mousemove(function() {
+            strokeSize = $('#range').val();
+            $('#strokeSize').css({
+                width: strokeSize + "px",
+                height: strokeSize + "px",
+                "margin-top": (70 - strokeSize) / 2,
+                background: color
+            });
+
+        });
+
+        $('#name input[type=button]').click(function() {
+
+            socket.emit('name', $('#name input[type=text]').val());
+            $('#name').fadeOut();
+
+            socket.on('nameCheck', function(iss) {
+                console.log(iss);
+            });
+        });
+
+        $(document).ready(vcenter);
+        $(window).on('resize', vcenter);
+
+
+
+        function vcenter() {
+
+            $('.vcenter').each(function() {
+                $(this).css({
+                    'display': 'inline-block',
+                    'margin-top': (parseInt($(this).parent().css('height')) - parseInt($(this).height())) / 2
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

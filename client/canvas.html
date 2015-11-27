@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <style type="text/css">
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        
+        canvas {
+            
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="1000" height="1000">
+
+    </canvas>
+
+    <script>
+        var ctx = document.getElementById('canvas').getContext('2d');
+        
+        var x = 200;
+        var y = 200;
+        var vel = [0,0];
+        var acc = 0.5;
+        var r = 10;
+        var up, down, left, right, red, green, blue, value;
+        
+        
+        
+        
+        
+        
+        $(document).keydown(function(key){
+            var k = key.which;
+            
+            switch (k) {
+                case 87:
+                    up = true;
+                    break;
+                    
+                case 83:
+                    down = true;
+                    break;
+                    
+                case 65:
+                    left = true;
+                    break;
+                    
+                case 68:
+                    right = true;
+                    break;    
+                
+                
+                case 70:
+                    console.log(Math.floor(x) + ", " + Math.floor(y) +", "+ value);
+                    break;
+                default:
+                    // code
+            }
+            
+        });
+        
+        
+        $(document).keyup(function(key){
+            var k = key.which;
+            
+            switch (k) {
+                case 87:
+                    up = false;
+                    break;
+                    
+                case 83:
+                    down = false;
+                    break;
+                    
+                case 65:
+                    left = false;
+                    break;
+                    
+                case 68:
+                    right = false;
+                    break;    
+                
+                default:
+                    // code
+            }
+            
+        });
+        
+
+        function anim() {
+            red = (x/600)*255;
+            green = (y/500)*255;
+            blue = 155;
+            // physics
+            var damping = 0.99;
+            
+            vel[0] *= damping;
+            vel[1] *= damping;
+            
+            x += vel[0];
+            y += vel[1];
+            
+            if(x < r || x > 500 - r){
+                
+                vel[0] = -vel[0];
+            }
+            if(y < r || y > 500 - r){
+                vel[1] = -vel[1];
+            }
+            
+            if(up){
+                vel[1] -= acc;
+            }
+            if(down){
+                vel[1] += acc;
+            }
+            if(left){
+                vel[0] -= acc;
+            }
+            if(right){
+                vel[0] += acc;
+            }
+            
+            
+            
+            
+            value = "rgb(" + red + "," + green + "," + blue + ")";
+            // drawing code
+            
+            ctx.clearRect(0,0,2000,2000);
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fillStyle=value;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(500, 0);
+            ctx.lineTo(500, 500);
+            ctx.lineTo(0, 500);
+            ctx.stroke();
+            console.log(ctx.fillStyle);
+
+            window.requestAnimationFrame(anim);
+        }
+        anim();
+    </script>
+</body>
+
+</html>
