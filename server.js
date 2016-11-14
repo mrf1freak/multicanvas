@@ -1,7 +1,7 @@
 var http = require("http");
 var express = require('express');
 var app = express();
-var server = http.createServer(app).listen(process.env.OPENSHIFT_NODEJS_PORT || 8080, process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1');
+var server = http.createServer(app).listen(process.env.OPENSHIFT_NODEJS_PORT, process.env.OPENSHIFT_NODEJS_IP);
 var id = require("shortid");
 var io = require("socket.io").listen(server);
 var canvasState = "";
