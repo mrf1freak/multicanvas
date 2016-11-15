@@ -1,7 +1,23 @@
 {
-"dependencies": {
-    "socke.io": "latest",
+  "name": "Multicanvas",
+  "description": "A multiuser canvas",
+  "version": "0.0.5",
+  "contributors": [
+    {
+      "name": "Jaymes Young",
+      "email": "jaymesyoung64@gmail.com",
+      "web": ""
+    }
+  ],
+  "dependencies": {
+    "socket.io": "latest",
     "express": "latest",
     "shortid": "latest"
-  }
+  },
+  "repositories": [
+    {
+      "type": "git",
+      "url": "git@github.com:mrf1freak/multicanvas.git"
+    }
+  ]
 }
